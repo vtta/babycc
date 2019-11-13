@@ -5,10 +5,10 @@
 %skeleton "lalr1.cc"
 
 /* require bison version */
-%require  "3.0"
+%require  "3.2"
 
 /* add parser members */
-%parse-param  {yy::scanner* scanner} {std::stringstream* po}
+%parse-param  {yy::scanner& scanner} {std::ostream& out}
 
 /* call yylex with a location */
 %locations
@@ -35,9 +35,10 @@
 
 /* inserted near top of header + source file */
 %code requires {
+    #include <sstream>
     #include <stdexcept>
     #include <string>
-    #include <sstream>
+    #include <vector>
 
     #include "ast.hpp"
     #include "location.hh"
@@ -46,35 +47,24 @@
         class scanner;
     };
 
-    void parse(const std::vector<std::string>&, std::stringstream*);
+    void parse(std::istream &in, std::ostream &out);
 }
 
 /* inserted near top of source file */
 %code {
-    #include <iostream>     // cerr, endl
-    #include <utility>      // move
-    #include <string>
+    #include <iostream>
     #include <sstream>
+    #include <string>
 
     #include "scanner.hpp"
 
-    using std::move;
-
     #undef yylex
-    #define yylex scanner->lex
-
-    // utility function to append a list element to a std::vector
-    template <class T, class V>
-    T&& enlist(T& t, V& v)
-    {
-        t.push_back(move(v));
-        return move(t);
-    }
+    #define yylex scanner.lex
 }
 
 %%
 
-S   :   S E '\n'        { *po << "ans = " << $2 << std::endl; }
+S   :   S E '\n'        { out << "ans = " << $2 << std::endl; }
     |   %empty          { /* empty */ }
     ;
 
@@ -88,48 +78,30 @@ E   :   E '+' E         { $$ = $1 + $3; }
 
 
 %%
-void yy::parser::error(const parser::location_type& l, const std::string& m)
-{
+void yy::parser::error(const parser::location_type &l, const std::string &m) {
     throw yy::parser::syntax_error(l, m);
 }
 
-// Example how to use the parser to parse a vector of lines:
-void parse(std::stringstream *out) {
-    int row = 0;
-    auto const indent = "    ";
-    while(!std::cin.eof()) {
-        std::string line;
-        std::getline(std::cin, line);
-        std::istringstream in(line);
-        yy::scanner scanner(&in);
-        yy::parser parser(&scanner, out);
-        try {
-            int result = parser.parse();
-            if (result != 0) {
-                // Not sure if this can even happen
-                throw std::runtime_error("Unknown parsing error");
-            }
+void parse(std::istream &in, std::ostream &out) {
+    yy::scanner scanner(in);
+    yy::parser parser(scanner, out);
+    try {
+        if (parser.parse() != 0) {
+            throw std::runtime_error("unknown parsing error");
         }
-        catch (yy::parser::syntax_error& e) {
-            // improve error messages by adding location information:
-            int col = e.location.begin.column;
-            int len = 1 + e.location.end.column - col;
-            // TODO: The reported location is not entirely satisfying. Any
-            // chances for improvement?
-            std::ostringstream msg;
-            msg << e.what() << "\n"
-                << "in row " << ++row << " col " << col << ":\n\n"
-                << indent << line << "\n"
-                << indent << std::string(col-1, ' ') << std::string(len, '^') 
-                << std::endl << e.location.begin.line;
-            throw yy::parser::syntax_error(e.location, msg.str());
-        }
+    } catch (yy::parser::syntax_error &e) {
+        std::ostringstream msg;
+        msg << e.what() << " at row " << e.location.begin.line << " column "
+            << e.location.begin.column;
+        throw yy::parser::syntax_error(e.location, msg.str());
     }
 }
 
 int main() {
-    std::stringstream str;
-    parse(&str);
-    std::cout << str.str() << std::endl;
+    try {
+        parse(std::cin, std::cout);
+    } catch (yy::parser::syntax_error &e) {
+        std::cerr << e.what() << std::endl;
+    }
     return 0;
 }

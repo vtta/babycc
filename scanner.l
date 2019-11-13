@@ -30,13 +30,9 @@
 .                           { }
 
 %%
-yy::scanner::scanner(std::istream* in, std::ostream* out)
-    : yyFlexLexer(in, out) { }
-
 // Flex generates the code for `yy::scanner::lex` (see YY_DECL).
-
 // This must be defined manually to prevent linker errors:
 int yyFlexLexer::yylex() {
     throw std::logic_error(
-        "The yylex() exists for technical reasons and must not be used.");
+        "yylex() exists for technical reasons and must not be used.");
 }
