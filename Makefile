@@ -13,7 +13,7 @@ run: $(OUT)
 clean:
 	rm -f *.o *.out *.cxx *.hxx *.cc *.hh *.output $(OUT)
 
-$(OUT):
+$(OUT): clean
 	flex scanner.l
 	bison parser.y
 	$(CXX) $(CXXFLAGS) scanner.cxx parser.cxx -o $(OUT)

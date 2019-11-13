@@ -94,9 +94,14 @@ void yy::parser::error(const parser::location_type& l, const std::string& m)
 }
 
 // Example how to use the parser to parse a vector of lines:
-void parse(std::stringstream *out)
-{
-        yy::scanner scanner(&std::cin);
+void parse(std::stringstream *out) {
+    int row = 0;
+    auto const indent = "    ";
+    while(!std::cin.eof()) {
+        std::string line;
+        std::getline(std::cin, line);
+        std::istringstream in(line);
+        yy::scanner scanner(&in);
         yy::parser parser(&scanner, out);
         try {
             int result = parser.parse();
@@ -113,10 +118,13 @@ void parse(std::stringstream *out)
             // chances for improvement?
             std::ostringstream msg;
             msg << e.what() << "\n"
-                << " col " << col << ":\n\n"
-                << "    " << std::string(col-1, ' ') << std::string(len, '^');
+                << "in row " << ++row << " col " << col << ":\n\n"
+                << indent << line << "\n"
+                << indent << std::string(col-1, ' ') << std::string(len, '^') 
+                << std::endl << e.location.begin.line;
             throw yy::parser::syntax_error(e.location, msg.str());
         }
+    }
 }
 
 int main() {
