@@ -69,8 +69,10 @@ public:
     Node(std::string const &label, int line_pos, int char_pos, Type type)
         : label(label), type(type), position(line_pos, char_pos) {}
     ~Node() = default;
-    std::string to_string(std::string prefix = "", bool last = true,
-                          bool root = true) const {
+    std::string to_string() const { return to_string("", true, true); }
+
+protected:
+    std::string to_string(std::string prefix, bool last, bool root) const {
         std::ostringstream buf;
         buf << prefix;
         if (!root) {
@@ -92,17 +94,6 @@ public:
     }
 };
 
-template <class H>
-inline auto add_children(std::shared_ptr<Node> node, H first) {
-    node->children.emplace_back(first);
-    return node;
-}
-template <class H, class... T>
-inline auto add_children(std::shared_ptr<Node> node, H first, T... children) {
-    node->children.emplace_back(first);
-    return add_children(node, children...);
-}
-
 inline auto new_node(Node::Type type,
                      std::shared_ptr<Node> firschild = nullptr) {
     if (firschild == nullptr) {
@@ -111,6 +102,7 @@ inline auto new_node(Node::Type type,
     return std::make_shared<Node>("", firschild->position.first,
                                   firschild->position.second, type);
 }
+
 inline auto make_node(Node::Type type) { return new_node(type, nullptr); }
 template <class H>
 inline auto make_node(Node::Type type, H first) {
@@ -118,6 +110,7 @@ inline auto make_node(Node::Type type, H first) {
     node->children.emplace_back(first);
     return node;
 }
+
 template <class H, class... T>
 inline auto make_node(Node::Type type, H first, T... children) {
     auto node = make_node(type, children...);

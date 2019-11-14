@@ -10,15 +10,11 @@
     #include <memory>
     #include "parser.hxx"
     #include "scanner.hpp"
-
-    // // utility macros to simplify the actions
-    // #define YIELD_TOKEN(tok, val, type)     yylval->build<type>(val); \
-    //                                         return yy::parser::token::T_##tok;
-    #define YIELD_TOKEN(tok)                                              \
-        yylval->build<std::shared_ptr<Node>>(                     \
-            std::make_shared<Node>(yytext, yylloc->begin.line,    \
-                                           yylloc->begin.column,  \
-                                           Node::Type::tok)); \
+    
+    // utility macros to simplify the actions
+    #define YIELD_TOKEN(tok)                                                     \
+        yylval->build<std::shared_ptr<Node>>(std::make_shared<Node>(             \
+            yytext, yylloc->begin.line, yylloc->begin.column, Node::Type::tok)); \
         return yy::parser::token::T_##tok;
 
     #define YY_USER_ACTION yylloc->columns(yyleng);

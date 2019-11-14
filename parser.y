@@ -23,7 +23,7 @@
 %define api.value.type variant
 %define api.token.prefix {T_}
 
-%token                  END     0   "EOF"
+%token END 0 "EOF"
 
 %token <std::shared_ptr<Node>> SEMI COMMA LP RP LB RB LC RC
             ASSIGN RELOP PLUS MINUS STAR DIV AND OR DOT NOT
@@ -70,6 +70,7 @@
 
     #undef yylex
     #define yylex scanner.lex
+
     std::shared_ptr<Node> ast_root = nullptr;
 }
 
