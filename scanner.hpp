@@ -23,6 +23,21 @@ public:
         : yyFlexLexer(&in, &out) {}
 
     int lex(parser::semantic_type *yylval, parser::location_type *yylloc);
+
+    void comment() {
+        for (int c; (c = yyFlexLexer::yyinput()) != 0;)
+            if (c == '*') {
+                while ((c = yyFlexLexer::yyinput()) == '*')
+                    ;
+                if (c == '/') return;
+                if (c == 0) break;
+            }
+        // std::ostringstream msg;
+        // msg << "unterminated comment at row " << yylloc->begin.line
+        //     << " column " << yylloc->begin.column;
+        // yyFlexLexer::LexerError(msg.str());
+        yyFlexLexer::LexerError("unterminated comment");
+    }
 };
 }  // namespace yy
 
