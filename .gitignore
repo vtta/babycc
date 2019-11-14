@@ -1,0 +1,9 @@
+*.o
+*.out
+*.cxx
+*.hxx
+*.cc
+*.hh
+*.output
+*.dot
+babycc
