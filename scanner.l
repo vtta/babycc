@@ -87,7 +87,8 @@ TYPE        "int"|"float"
 "}"                         YIELD_TOKEN(RC)
 \n                          { yylloc->lines(1); }
 [ \t\v\f]+                  { /* eat whitespace */ }
-.                           { /* let bison handle unrecognized token */ }
+.                           { /* let bison handle unrecognized token */
+                              return yytext[0]; }
 
 %%
 // Flex generates the code for `yy::scanner::lex` (see YY_DECL).
