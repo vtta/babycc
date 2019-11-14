@@ -6,4 +6,6 @@
 *.hh
 *.output
 *.dot
+*.dSYM
 babycc
+.vscode
