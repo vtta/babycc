@@ -25,11 +25,11 @@
 
 %token                  END     0   "EOF"
 
-%token <std::shared_ptr<TerminalNode>> SEMI COMMA LP RP LB RB LC RC
+%token <std::shared_ptr<Node>> SEMI COMMA LP RP LB RB LC RC
             ASSIGN RELOP PLUS MINUS STAR DIV AND OR DOT NOT
             TYPE STRUCT RETURN IF ELSE WHILE INT FLOAT ID
 
-%type <std::shared_ptr<NonTerminalNode>> Program ExtDefList ExtDef ExtDecList
+%type <std::shared_ptr<Node>> Program ExtDefList ExtDef ExtDecList
             Specifier StructSpecifier OptTag Tag VarDec FunDec
             VarList ParamDec CompSt StmtList Stmt DefList Def DecList
             Dec Exp Args
@@ -70,6 +70,7 @@
 
     #undef yylex
     #define yylex scanner.lex
+    std::shared_ptr<Node> ast_root = nullptr;
 }
 
 %%
@@ -78,140 +79,140 @@
 
 Program
     : ExtDefList                    {
-                                        $$ = make_non_terminal(NonTerminalNode::Type::T_Program, $1);
-                                        std::cout << $$->to_string() << std::endl;
+                                        $$ = make_node(Node::Type::T_Program, $1);
+                                        ast_root = $$;
                                     }
     ;
 
 ExtDefList
-    : ExtDef ExtDefList             { $$ = make_non_terminal(NonTerminalNode::Type::T_ExtDefList, $1, $2); }
-    | %empty                        { $$ = nullptr; }
+    : ExtDef ExtDefList             { $$ = make_node(Node::Type::T_ExtDefList, $1, $2); }
+    | %empty                        { $$ = make_node(Node::Type::T_ExtDefList); }
     ;
 
 ExtDef
-    : Specifier ExtDecList SEMI     { $$ = make_non_terminal(NonTerminalNode::Type::T_ExtDef, $1, $2, $3); }
-    | Specifier SEMI                { $$ = make_non_terminal(NonTerminalNode::Type::T_ExtDef, $1, $2); }
-    | Specifier FunDec CompSt       { $$ = make_non_terminal(NonTerminalNode::Type::T_ExtDef, $1, $2, $3); }
+    : Specifier ExtDecList SEMI     { $$ = make_node(Node::Type::T_ExtDef, $1, $2, $3); }
+    | Specifier SEMI                { $$ = make_node(Node::Type::T_ExtDef, $1, $2); }
+    | Specifier FunDec CompSt       { $$ = make_node(Node::Type::T_ExtDef, $1, $2, $3); }
     ;
 
 ExtDecList
-    : VarDec                        { $$ = make_non_terminal(NonTerminalNode::Type::T_ExtDecList, $1); }
-    | VarDec COMMA ExtDecList       { $$ = make_non_terminal(NonTerminalNode::Type::T_ExtDecList, $1, $2, $3); }
+    : VarDec                        { $$ = make_node(Node::Type::T_ExtDecList, $1); }
+    | VarDec COMMA ExtDecList       { $$ = make_node(Node::Type::T_ExtDecList, $1, $2, $3); }
     ;
 
 
 /* Specifiers */
 Specifier
-    : TYPE                          { $$ = make_non_terminal(NonTerminalNode::Type::T_Specifier, $1); }
-    | StructSpecifier               { $$ = make_non_terminal(NonTerminalNode::Type::T_Specifier, $1); }
+    : TYPE                          { $$ = make_node(Node::Type::T_Specifier, $1); }
+    | StructSpecifier               { $$ = make_node(Node::Type::T_Specifier, $1); }
     ;
 
 StructSpecifier
-    : STRUCT OptTag LC DefList RC   { $$ = make_non_terminal(NonTerminalNode::Type::T_StructSpecifier, $1, $2, $3, $4, $5); }
-    | STRUCT Tag                    { $$ = make_non_terminal(NonTerminalNode::Type::T_StructSpecifier, $1, $2); }
+    : STRUCT OptTag LC DefList RC   { $$ = make_node(Node::Type::T_StructSpecifier, $1, $2, $3, $4, $5); }
+    | STRUCT Tag                    { $$ = make_node(Node::Type::T_StructSpecifier, $1, $2); }
     ;
 
 OptTag
-    : ID                            { $$ = make_non_terminal(NonTerminalNode::Type::T_OptTag, $1); }
-    | %empty                        { $$ = nullptr; }
+    : ID                            { $$ = make_node(Node::Type::T_OptTag, $1); }
+    | %empty                        { $$ = make_node(Node::Type::T_OptTag); }
     ;
 
 Tag
-    : ID                            { $$ = make_non_terminal(NonTerminalNode::Type::T_Tag, $1); }
+    : ID                            { $$ = make_node(Node::Type::T_Tag, $1); }
     ;
 
 
 /* Declarators */
 
 VarDec
-    : ID                            { $$ = make_non_terminal(NonTerminalNode::Type::T_VarDec, $1); }
-    | VarDec LB INT RB              { $$ = make_non_terminal(NonTerminalNode::Type::T_VarDec, $1, $2, $3, $4); }
+    : ID                            { $$ = make_node(Node::Type::T_VarDec, $1); }
+    | VarDec LB INT RB              { $$ = make_node(Node::Type::T_VarDec, $1, $2, $3, $4); }
     ;
 
 FunDec 
-    : ID LP VarList RP              { $$ = make_non_terminal(NonTerminalNode::Type::T_FunDec, $1, $2, $3, $4); }
-    | ID LP RP                      { $$ = make_non_terminal(NonTerminalNode::Type::T_FunDec, $1, $2, $3); }
+    : ID LP VarList RP              { $$ = make_node(Node::Type::T_FunDec, $1, $2, $3, $4); }
+    | ID LP RP                      { $$ = make_node(Node::Type::T_FunDec, $1, $2, $3); }
     ;
 
 VarList
-    : ParamDec COMMA VarList        { $$ = make_non_terminal(NonTerminalNode::Type::T_VarList, $1, $2, $3); }
-    | ParamDec                      { $$ = make_non_terminal(NonTerminalNode::Type::T_VarList, $1); }
+    : ParamDec COMMA VarList        { $$ = make_node(Node::Type::T_VarList, $1, $2, $3); }
+    | ParamDec                      { $$ = make_node(Node::Type::T_VarList, $1); }
     ;
 
 ParamDec
-    : Specifier VarDec              { $$ = make_non_terminal(NonTerminalNode::Type::T_ParamDec, $1, $2); }
+    : Specifier VarDec              { $$ = make_node(Node::Type::T_ParamDec, $1, $2); }
     ;
 
 
 /* Statements */
 
 CompSt 
-    : LC DefList StmtList RC        { $$ = make_non_terminal(NonTerminalNode::Type::T_CompSt, $1, $2, $3, $4); }
+    : LC DefList StmtList RC        { $$ = make_node(Node::Type::T_CompSt, $1, $2, $3, $4); }
     ;
 
 StmtList
-    : Stmt StmtList                 { $$ = make_non_terminal(NonTerminalNode::Type::T_StmtList, $1, $2); }
-    | %empty                        { $$ = nullptr; }
+    : Stmt StmtList                 { $$ = make_node(Node::Type::T_StmtList, $1, $2); }
+    | %empty                        { $$ = make_node(Node::Type::T_StmtList); }
     ;
 
 Stmt
-    : Exp SEMI                      { $$ = make_non_terminal(NonTerminalNode::Type::T_Stmt, $1, $2); }
-    | CompSt                        { $$ = make_non_terminal(NonTerminalNode::Type::T_Stmt, $1); }
-    | RETURN Exp SEMI               { $$ = make_non_terminal(NonTerminalNode::Type::T_Stmt, $1, $2, $3); }
-    | IF LP Exp RP Stmt %prec LTE   { $$ = make_non_terminal(NonTerminalNode::Type::T_Stmt, $1, $2, $3, $4, $5); }
-    | IF LP Exp RP Stmt ELSE Stmt   { $$ = make_non_terminal(NonTerminalNode::Type::T_Stmt, $1, $2, $3, $4, $5, $6, $7); }
-    | WHILE LP Exp RP Stmt          { $$ = make_non_terminal(NonTerminalNode::Type::T_Stmt, $1, $2, $3, $4, $5); }
+    : Exp SEMI                      { $$ = make_node(Node::Type::T_Stmt, $1, $2); }
+    | CompSt                        { $$ = make_node(Node::Type::T_Stmt, $1); }
+    | RETURN Exp SEMI               { $$ = make_node(Node::Type::T_Stmt, $1, $2, $3); }
+    | IF LP Exp RP Stmt %prec LTE   { $$ = make_node(Node::Type::T_Stmt, $1, $2, $3, $4, $5); }
+    | IF LP Exp RP Stmt ELSE Stmt   { $$ = make_node(Node::Type::T_Stmt, $1, $2, $3, $4, $5, $6, $7); }
+    | WHILE LP Exp RP Stmt          { $$ = make_node(Node::Type::T_Stmt, $1, $2, $3, $4, $5); }
     ;
 
 
 /*  Local Definitions */
 
 DefList
-    : Def DefList                   { $$ = make_non_terminal(NonTerminalNode::Type::T_DefList, $1, $2); }
-    | %empty                        { $$ = nullptr; }
+    : Def DefList                   { $$ = make_node(Node::Type::T_DefList, $1, $2); }
+    | %empty                        { $$ = make_node(Node::Type::T_DefList); }
     ;
 
 Def
-    : Specifier DecList SEMI        { $$ = make_non_terminal(NonTerminalNode::Type::T_Def, $1, $2, $3); }
+    : Specifier DecList SEMI        { $$ = make_node(Node::Type::T_Def, $1, $2, $3); }
     ;
 
 DecList
-    : Dec                           { $$ = make_non_terminal(NonTerminalNode::Type::T_DecList, $1); }
-    | Dec COMMA DecList             { $$ = make_non_terminal(NonTerminalNode::Type::T_DecList, $1, $2, $3); }
+    : Dec                           { $$ = make_node(Node::Type::T_DecList, $1); }
+    | Dec COMMA DecList             { $$ = make_node(Node::Type::T_DecList, $1, $2, $3); }
     ;
 
 Dec
-    : VarDec                        { $$ = make_non_terminal(NonTerminalNode::Type::T_Dec, $1); }
-    | VarDec ASSIGN Exp             { $$ = make_non_terminal(NonTerminalNode::Type::T_Dec, $1, $2, $3); }
+    : VarDec                        { $$ = make_node(Node::Type::T_Dec, $1); }
+    | VarDec ASSIGN Exp             { $$ = make_node(Node::Type::T_Dec, $1, $2, $3); }
     ;
 
 
 /* Expressions */
 
 Exp
-    : Exp ASSIGN Exp                { $$ = make_non_terminal(NonTerminalNode::Type::T_Exp, $1, $2, $3); }
-    | Exp AND Exp                   { $$ = make_non_terminal(NonTerminalNode::Type::T_Exp, $1, $2, $3); }
-    | Exp OR Exp                    { $$ = make_non_terminal(NonTerminalNode::Type::T_Exp, $1, $2, $3); }
-    | Exp RELOP Exp                 { $$ = make_non_terminal(NonTerminalNode::Type::T_Exp, $1, $2, $3); }
-    | Exp PLUS Exp                  { $$ = make_non_terminal(NonTerminalNode::Type::T_Exp, $1, $2, $3); }
-    | Exp MINUS Exp                 { $$ = make_non_terminal(NonTerminalNode::Type::T_Exp, $1, $2, $3); }
-    | Exp STAR Exp                  { $$ = make_non_terminal(NonTerminalNode::Type::T_Exp, $1, $2, $3); }
-    | Exp DIV Exp                   { $$ = make_non_terminal(NonTerminalNode::Type::T_Exp, $1, $2, $3); }
-    | LP Exp RP                     { $$ = make_non_terminal(NonTerminalNode::Type::T_Exp, $1, $2, $3); }
-    | MINUS Exp                     { $$ = make_non_terminal(NonTerminalNode::Type::T_Exp, $1, $2); }
-    | NOT Exp                       { $$ = make_non_terminal(NonTerminalNode::Type::T_Exp, $1, $2); }
-    | ID LP Args RP                 { $$ = make_non_terminal(NonTerminalNode::Type::T_Exp, $1, $2, $3, $4); }
-    | ID LP RP                      { $$ = make_non_terminal(NonTerminalNode::Type::T_Exp, $1, $2, $3); }
-    | Exp LB Exp RB                 { $$ = make_non_terminal(NonTerminalNode::Type::T_Exp, $1, $2, $3, $4); }
-    | Exp DOT ID                    { $$ = make_non_terminal(NonTerminalNode::Type::T_Exp, $1, $2, $3); }
-    | ID                            { $$ = make_non_terminal(NonTerminalNode::Type::T_Exp, $1); }
-    | INT                           { $$ = make_non_terminal(NonTerminalNode::Type::T_Exp, $1); }
-    | FLOAT                         { $$ = make_non_terminal(NonTerminalNode::Type::T_Exp, $1); }
+    : Exp ASSIGN Exp                { $$ = make_node(Node::Type::T_Exp, $1, $2, $3); }
+    | Exp AND Exp                   { $$ = make_node(Node::Type::T_Exp, $1, $2, $3); }
+    | Exp OR Exp                    { $$ = make_node(Node::Type::T_Exp, $1, $2, $3); }
+    | Exp RELOP Exp                 { $$ = make_node(Node::Type::T_Exp, $1, $2, $3); }
+    | Exp PLUS Exp                  { $$ = make_node(Node::Type::T_Exp, $1, $2, $3); }
+    | Exp MINUS Exp                 { $$ = make_node(Node::Type::T_Exp, $1, $2, $3); }
+    | Exp STAR Exp                  { $$ = make_node(Node::Type::T_Exp, $1, $2, $3); }
+    | Exp DIV Exp                   { $$ = make_node(Node::Type::T_Exp, $1, $2, $3); }
+    | LP Exp RP                     { $$ = make_node(Node::Type::T_Exp, $1, $2, $3); }
+    | MINUS Exp                     { $$ = make_node(Node::Type::T_Exp, $1, $2); }
+    | NOT Exp                       { $$ = make_node(Node::Type::T_Exp, $1, $2); }
+    | ID LP Args RP                 { $$ = make_node(Node::Type::T_Exp, $1, $2, $3, $4); }
+    | ID LP RP                      { $$ = make_node(Node::Type::T_Exp, $1, $2, $3); }
+    | Exp LB Exp RB                 { $$ = make_node(Node::Type::T_Exp, $1, $2, $3, $4); }
+    | Exp DOT ID                    { $$ = make_node(Node::Type::T_Exp, $1, $2, $3); }
+    | ID                            { $$ = make_node(Node::Type::T_Exp, $1); }
+    | INT                           { $$ = make_node(Node::Type::T_Exp, $1); }
+    | FLOAT                         { $$ = make_node(Node::Type::T_Exp, $1); }
     ;
 
 Args
-    : Exp COMMA Args                { $$ = make_non_terminal(NonTerminalNode::Type::T_Args, $1, $2, $3); }
-    | Exp                           { $$ = make_non_terminal(NonTerminalNode::Type::T_Args, $1); }
+    : Exp COMMA Args                { $$ = make_node(Node::Type::T_Args, $1, $2, $3); }
+    | Exp                           { $$ = make_node(Node::Type::T_Args, $1); }
     ;
 
 %%
@@ -237,6 +238,7 @@ void parse(std::istream &in, std::ostream &out) {
 int main() {
     try {
         parse(std::cin, std::cout);
+        std::cout << ast_root->to_string();
     } catch (yy::parser::syntax_error &e) {
         std::cerr << e.what() << std::endl;
     }

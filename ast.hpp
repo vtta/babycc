@@ -7,9 +7,7 @@
 
 #include "magic_enum.hpp"
 
-constexpr auto INDENT_WIDTH = 4;
-
-enum class NonTerminalType {
+enum class SymbolType {
     T_Program,
     T_ExtDefList,
     T_ExtDef,
@@ -30,10 +28,7 @@ enum class NonTerminalType {
     T_DecList,
     T_Dec,
     T_Exp,
-    T_Args
-};
-
-enum class TerminalType {
+    T_Args,
     T_INT,
     T_FLOAT,
     T_ID,
@@ -65,79 +60,67 @@ enum class TerminalType {
 
 class Node {
 public:
+    using Type = SymbolType;
     std::string label;
+    Type type;
     std::pair<int, int> position;
-    Node(std::string const &label, int line_pos, int char_pos)
-        : label(label), position(line_pos, char_pos) {}
-    virtual ~Node() = default;
-    virtual std::string to_string(int indent = 0) const = 0;
-};
-
-class TerminalNode : public Node {
-public:
-    using Type = TerminalType;
-    Type type;
-    TerminalNode(std::string const &label, int line_pos, int char_pos,
-                 Type type)
-        : type(type), Node(label, line_pos, char_pos) {}
-    ~TerminalNode() = default;
-    std::string to_string(int indent = 0) const {
-        std::stringstream buf;
-        buf.str(std::string(' ', indent));
-        buf << magic_enum::enum_name(type) << ' ' << label << std::endl;
-        return buf.str();
-    }
-};
-
-class NonTerminalNode : public Node {
-public:
-    using Type = NonTerminalType;
-    Type type;
+    // children is stored in reversed order
     std::vector<std::shared_ptr<Node>> children;
-    NonTerminalNode(std::string const &label, int line_pos, int char_pos,
-                    Type type)
-        : type(type), Node(label, line_pos, char_pos) {}
-    ~NonTerminalNode() = default;
-    std::string to_string(int indent = 0) const {
-        std::stringstream buf;
-        buf.str(std::string(' ', indent));
+    Node(std::string const &label, int line_pos, int char_pos, Type type)
+        : label(label), type(type), position(line_pos, char_pos) {}
+    ~Node() = default;
+    std::string to_string(std::string prefix = "", bool last = true,
+                          bool root = true) const {
+        std::ostringstream buf;
+        buf << prefix;
+        if (!root) {
+            buf << (last ? "└──" : "├──");
+        }
         buf << magic_enum::enum_name(type) << ' ' << label << std::endl;
-        for (auto const &i : children) {
-            buf << i->to_string(indent + INDENT_WIDTH);
+        for (auto i = children.rbegin(); i != children.rend(); ++i) {
+            auto new_prefix = prefix;
+            if (!root) {
+                new_prefix += (last ? "    " : "│   ");
+            }
+            if (i + 1 != children.rend()) {
+                buf << (*i)->to_string(new_prefix, false, false);
+            } else {
+                buf << (*i)->to_string(new_prefix, true, false);
+            }
         }
         return buf.str();
     }
 };
 
 template <class H>
-inline auto add_children(std::shared_ptr<NonTerminalNode> node, H first) {
+inline auto add_children(std::shared_ptr<Node> node, H first) {
     node->children.emplace_back(first);
     return node;
 }
 template <class H, class... T>
-inline auto add_children(std::shared_ptr<NonTerminalNode> node, H first,
-                         T... children) {
+inline auto add_children(std::shared_ptr<Node> node, H first, T... children) {
     node->children.emplace_back(first);
     return add_children(node, children...);
 }
 
-inline auto new_non_terminal(NonTerminalNode::Type type,
-                             std::shared_ptr<Node> first_child = nullptr) {
+inline auto new_node(Node::Type type,
+                     std::shared_ptr<Node> first_child = nullptr) {
     if (first_child == nullptr) {
-        return std::make_shared<NonTerminalNode>("", 0, 0, type);
+        return std::make_shared<Node>("", 0, 0, type);
     }
-    return std::make_shared<NonTerminalNode>(
-        "", first_child->position.first, first_child->position.second, type);
+    return std::make_shared<Node>("", first_child->position.first,
+                                  first_child->position.second, type);
 }
-inline auto make_non_terminal(NonTerminalNode::Type type) {
-    return new_non_terminal(type, nullptr);
-}
+inline auto make_node(Node::Type type) { return new_node(type, nullptr); }
 template <class H>
-inline auto make_non_terminal(NonTerminalNode::Type type, H first) {
-    return new_non_terminal(type, first);
+inline auto make_node(Node::Type type, H first) {
+    auto node = new_node(type, first);
+    node->children.emplace_back(first);
+    return node;
 }
 template <class H, class... T>
-inline auto make_non_terminal(NonTerminalNode::Type type, H first,
-                              T... children) {
-    return add_children(new_non_terminal(type, first), children...);
+inline auto make_node(Node::Type type, H first, T... children) {
+    auto node = make_node(type, children...);
+    node->children.emplace_back(first);
+    return node;
 }

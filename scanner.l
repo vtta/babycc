@@ -15,10 +15,10 @@
     // #define YIELD_TOKEN(tok, val, type)     yylval->build<type>(val); \
     //                                         return yy::parser::token::T_##tok;
     #define YIELD_TOKEN(tok)                                              \
-        yylval->build<std::shared_ptr<TerminalNode>>(                     \
-            std::make_shared<TerminalNode>(yytext, yylloc->begin.line,    \
-                                           yylloc->begin.column,          \
-                                           TerminalNode::Type::T_##tok)); \
+        yylval->build<std::shared_ptr<Node>>(                     \
+            std::make_shared<Node>(yytext, yylloc->begin.line,    \
+                                           yylloc->begin.column,  \
+                                           Node::Type::T_##tok)); \
         return yy::parser::token::T_##tok;
 
     #define YY_USER_ACTION yylloc->columns(yyleng);
