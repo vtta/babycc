@@ -18,7 +18,7 @@
         yylval->build<std::shared_ptr<Node>>(                     \
             std::make_shared<Node>(yytext, yylloc->begin.line,    \
                                            yylloc->begin.column,  \
-                                           Node::Type::T_##tok)); \
+                                           Node::Type::tok)); \
         return yy::parser::token::T_##tok;
 
     #define YY_USER_ACTION yylloc->columns(yyleng);
