@@ -1,4 +1,4 @@
-CXX = clang++
+CXX = /usr/local/opt/llvm/bin/clang++
 CXXFLAGS = -std=c++17 -g -O0 -I/usr/local/opt/llvm/include/c++/v1 -I/usr/local/opt/flex/include -fsanitize=address
 OUT = babycc
 OBJ = scanner.o parser.o
@@ -7,8 +7,8 @@ SCANNER = scanner.l
 PARSER = parser.y
 
 $(OUT):
-	flex scanner.l
-	bison --graph --report=all parser.y
+	/usr/local/opt/flex/bin/flex scanner.l
+	/usr/local/opt/bison/bin/bison --graph --report=all parser.y
 	$(CXX) $(CXXFLAGS) scanner.cxx parser.cxx -o $(OUT)
 
 build: $(OUT)

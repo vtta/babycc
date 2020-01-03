@@ -80,140 +80,196 @@
 
 Program
     : ExtDefList                    {
+                                        // std::cerr << yylhs.location.begin.line << std::endl;
+                                        std::cerr << @1.begin.line << std::endl;
                                         $$ = make_node(Node::Type::Program, $1);
+                                        $$->position.first = @1.begin.line;
                                         ast_root = $$;
                                     }
     ;
 
 ExtDefList
-    : ExtDef ExtDefList             { $$ = make_node(Node::Type::ExtDefList, $1, $2); }
-    | %empty                        { $$ = make_node(Node::Type::ExtDefList); }
+    : ExtDef ExtDefList             { $$ = make_node(Node::Type::ExtDefList, $1, $2);
+                                        $$->position.first = @1.begin.line; }
+    | %empty                        { $$ = nullptr; }
     ;
 
 ExtDef
-    : Specifier ExtDecList SEMI     { $$ = make_node(Node::Type::ExtDef, $1, $2, $3); }
-    | Specifier SEMI                { $$ = make_node(Node::Type::ExtDef, $1, $2); }
-    | Specifier FunDec CompSt       { $$ = make_node(Node::Type::ExtDef, $1, $2, $3); }
+    : Specifier ExtDecList SEMI     { $$ = make_node(Node::Type::ExtDef, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
+    | Specifier SEMI                { $$ = make_node(Node::Type::ExtDef, $1, $2);
+                                        $$->position.first = @1.begin.line; }
+    | Specifier FunDec CompSt       { $$ = make_node(Node::Type::ExtDef, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
     ;
 
 ExtDecList
-    : VarDec                        { $$ = make_node(Node::Type::ExtDecList, $1); }
-    | VarDec COMMA ExtDecList       { $$ = make_node(Node::Type::ExtDecList, $1, $2, $3); }
+    : VarDec                        { $$ = make_node(Node::Type::ExtDecList, $1);
+                                        $$->position.first = @1.begin.line; }
+    | VarDec COMMA ExtDecList       { $$ = make_node(Node::Type::ExtDecList, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
     ;
 
 
 /* Specifiers */
 Specifier
-    : TYPE                          { $$ = make_node(Node::Type::Specifier, $1); }
-    | StructSpecifier               { $$ = make_node(Node::Type::Specifier, $1); }
+    : TYPE                          { $$ = make_node(Node::Type::Specifier, $1);
+                                        $$->position.first = @1.begin.line; }
+    | StructSpecifier               { $$ = make_node(Node::Type::Specifier, $1);
+                                        $$->position.first = @1.begin.line; }
     ;
 
 StructSpecifier
-    : STRUCT OptTag LC DefList RC   { $$ = make_node(Node::Type::StructSpecifier, $1, $2, $3, $4, $5); }
-    | STRUCT Tag                    { $$ = make_node(Node::Type::StructSpecifier, $1, $2); }
+    : STRUCT OptTag LC DefList RC   { $$ = make_node(Node::Type::StructSpecifier, $1, $2, $3, $4, $5);
+                                        $$->position.first = @1.begin.line; }
+    | STRUCT Tag                    { $$ = make_node(Node::Type::StructSpecifier, $1, $2);
+                                        $$->position.first = @1.begin.line; }
     ;
 
 OptTag
-    : ID                            { $$ = make_node(Node::Type::OptTag, $1); }
-    | %empty                        { $$ = make_node(Node::Type::OptTag); }
+    : ID                            { $$ = make_node(Node::Type::OptTag, $1);
+                                        $$->position.first = @1.begin.line; }
+    | %empty                        { $$ = nullptr; }
     ;
 
 Tag
-    : ID                            { $$ = make_node(Node::Type::Tag, $1); }
+    : ID                            { $$ = make_node(Node::Type::Tag, $1);
+                                        $$->position.first = @1.begin.line; }
     ;
 
 
 /* Declarators */
 
 VarDec
-    : ID                            { $$ = make_node(Node::Type::VarDec, $1); }
-    | VarDec LB INT RB              { $$ = make_node(Node::Type::VarDec, $1, $2, $3, $4); }
+    : ID                            { $$ = make_node(Node::Type::VarDec, $1);
+                                        $$->position.first = @1.begin.line; }
+    | VarDec LB INT RB              { $$ = make_node(Node::Type::VarDec, $1, $2, $3, $4);
+                                        $$->position.first = @1.begin.line; }
     ;
 
 FunDec 
-    : ID LP VarList RP              { $$ = make_node(Node::Type::FunDec, $1, $2, $3, $4); }
-    | ID LP RP                      { $$ = make_node(Node::Type::FunDec, $1, $2, $3); }
+    : ID LP VarList RP              { $$ = make_node(Node::Type::FunDec, $1, $2, $3, $4);
+                                        $$->position.first = @1.begin.line; }
+    | ID LP RP                      { $$ = make_node(Node::Type::FunDec, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
     ;
 
 VarList
-    : ParamDec COMMA VarList        { $$ = make_node(Node::Type::VarList, $1, $2, $3); }
-    | ParamDec                      { $$ = make_node(Node::Type::VarList, $1); }
+    : ParamDec COMMA VarList        { $$ = make_node(Node::Type::VarList, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
+    | ParamDec                      { $$ = make_node(Node::Type::VarList, $1);
+                                        $$->position.first = @1.begin.line; }
     ;
 
 ParamDec
-    : Specifier VarDec              { $$ = make_node(Node::Type::ParamDec, $1, $2); }
+    : Specifier VarDec              { $$ = make_node(Node::Type::ParamDec, $1, $2);
+                                        $$->position.first = @1.begin.line; }
     ;
 
 
 /* Statements */
 
 CompSt 
-    : LC DefList StmtList RC        { $$ = make_node(Node::Type::CompSt, $1, $2, $3, $4); }
+    : LC DefList StmtList RC        { $$ = make_node(Node::Type::CompSt, $1, $2, $3, $4);
+                                        $$->position.first = @1.begin.line; }
     ;
 
 StmtList
-    : Stmt StmtList                 { $$ = make_node(Node::Type::StmtList, $1, $2); }
-    | %empty                        { $$ = make_node(Node::Type::StmtList); }
+    : Stmt StmtList                 { $$ = make_node(Node::Type::StmtList, $1, $2);
+                                        $$->position.first = @1.begin.line; }
+    | %empty                        { $$ = nullptr; }
     ;
 
 Stmt
-    : Exp SEMI                      { $$ = make_node(Node::Type::Stmt, $1, $2); }
-    | CompSt                        { $$ = make_node(Node::Type::Stmt, $1); }
-    | RETURN Exp SEMI               { $$ = make_node(Node::Type::Stmt, $1, $2, $3); }
-    | IF LP Exp RP Stmt %prec LTE   { $$ = make_node(Node::Type::Stmt, $1, $2, $3, $4, $5); }
-    | IF LP Exp RP Stmt ELSE Stmt   { $$ = make_node(Node::Type::Stmt, $1, $2, $3, $4, $5, $6, $7); }
-    | WHILE LP Exp RP Stmt          { $$ = make_node(Node::Type::Stmt, $1, $2, $3, $4, $5); }
+    : Exp SEMI                      { $$ = make_node(Node::Type::Stmt, $1, $2);
+                                        $$->position.first = @1.begin.line; }
+    | CompSt                        { $$ = make_node(Node::Type::Stmt, $1);
+                                        $$->position.first = @1.begin.line; }
+    | RETURN Exp SEMI               { $$ = make_node(Node::Type::Stmt, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
+    | IF LP Exp RP Stmt %prec LTE   { $$ = make_node(Node::Type::Stmt, $1, $2, $3, $4, $5);
+                                        $$->position.first = @1.begin.line; }
+    | IF LP Exp RP Stmt ELSE Stmt   { $$ = make_node(Node::Type::Stmt, $1, $2, $3, $4, $5, $6, $7);
+                                        $$->position.first = @1.begin.line; }
+    | WHILE LP Exp RP Stmt          { $$ = make_node(Node::Type::Stmt, $1, $2, $3, $4, $5);
+                                        $$->position.first = @1.begin.line; }
     ;
 
 
 /*  Local Definitions */
 
 DefList
-    : Def DefList                   { $$ = make_node(Node::Type::DefList, $1, $2); }
-    | %empty                        { $$ = make_node(Node::Type::DefList); }
+    : Def DefList                   { $$ = make_node(Node::Type::DefList, $1, $2);
+                                        $$->position.first = @1.begin.line; }
+    | %empty                        { $$ = nullptr; }
     ;
 
 Def
-    : Specifier DecList SEMI        { $$ = make_node(Node::Type::Def, $1, $2, $3); }
+    : Specifier DecList SEMI        { $$ = make_node(Node::Type::Def, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
     ;
 
 DecList
-    : Dec                           { $$ = make_node(Node::Type::DecList, $1); }
-    | Dec COMMA DecList             { $$ = make_node(Node::Type::DecList, $1, $2, $3); }
+    : Dec                           { $$ = make_node(Node::Type::DecList, $1);
+                                        $$->position.first = @1.begin.line; }
+    | Dec COMMA DecList             { $$ = make_node(Node::Type::DecList, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
     ;
 
 Dec
-    : VarDec                        { $$ = make_node(Node::Type::Dec, $1); }
-    | VarDec ASSIGN Exp             { $$ = make_node(Node::Type::Dec, $1, $2, $3); }
+    : VarDec                        { $$ = make_node(Node::Type::Dec, $1);
+                                        $$->position.first = @1.begin.line; }
+    | VarDec ASSIGN Exp             { $$ = make_node(Node::Type::Dec, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
     ;
 
 
 /* Expressions */
 
 Exp
-    : Exp ASSIGN Exp                { $$ = make_node(Node::Type::Exp, $1, $2, $3); }
-    | Exp AND Exp                   { $$ = make_node(Node::Type::Exp, $1, $2, $3); }
-    | Exp OR Exp                    { $$ = make_node(Node::Type::Exp, $1, $2, $3); }
-    | Exp RELOP Exp                 { $$ = make_node(Node::Type::Exp, $1, $2, $3); }
-    | Exp PLUS Exp                  { $$ = make_node(Node::Type::Exp, $1, $2, $3); }
-    | Exp MINUS Exp                 { $$ = make_node(Node::Type::Exp, $1, $2, $3); }
-    | Exp STAR Exp                  { $$ = make_node(Node::Type::Exp, $1, $2, $3); }
-    | Exp DIV Exp                   { $$ = make_node(Node::Type::Exp, $1, $2, $3); }
-    | LP Exp RP                     { $$ = make_node(Node::Type::Exp, $1, $2, $3); }
-    | MINUS Exp                     { $$ = make_node(Node::Type::Exp, $1, $2); }
-    | NOT Exp                       { $$ = make_node(Node::Type::Exp, $1, $2); }
-    | ID LP Args RP                 { $$ = make_node(Node::Type::Exp, $1, $2, $3, $4); }
-    | ID LP RP                      { $$ = make_node(Node::Type::Exp, $1, $2, $3); }
-    | Exp LB Exp RB                 { $$ = make_node(Node::Type::Exp, $1, $2, $3, $4); }
-    | Exp DOT ID                    { $$ = make_node(Node::Type::Exp, $1, $2, $3); }
-    | ID                            { $$ = make_node(Node::Type::Exp, $1); }
-    | INT                           { $$ = make_node(Node::Type::Exp, $1); }
-    | FLOAT                         { $$ = make_node(Node::Type::Exp, $1); }
+    : Exp ASSIGN Exp                { $$ = make_node(Node::Type::Exp, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
+    | Exp AND Exp                   { $$ = make_node(Node::Type::Exp, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
+    | Exp OR Exp                    { $$ = make_node(Node::Type::Exp, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
+    | Exp RELOP Exp                 { $$ = make_node(Node::Type::Exp, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
+    | Exp PLUS Exp                  { $$ = make_node(Node::Type::Exp, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
+    | Exp MINUS Exp                 { $$ = make_node(Node::Type::Exp, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
+    | Exp STAR Exp                  { $$ = make_node(Node::Type::Exp, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
+    | Exp DIV Exp                   { $$ = make_node(Node::Type::Exp, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
+    | LP Exp RP                     { $$ = make_node(Node::Type::Exp, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
+    | MINUS Exp                     { $$ = make_node(Node::Type::Exp, $1, $2);
+                                        $$->position.first = @1.begin.line; }
+    | NOT Exp                       { $$ = make_node(Node::Type::Exp, $1, $2);
+                                        $$->position.first = @1.begin.line; }
+    | ID LP Args RP                 { $$ = make_node(Node::Type::Exp, $1, $2, $3, $4);
+                                        $$->position.first = @1.begin.line; }
+    | ID LP RP                      { $$ = make_node(Node::Type::Exp, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
+    | Exp LB Exp RB                 { $$ = make_node(Node::Type::Exp, $1, $2, $3, $4);
+                                        $$->position.first = @1.begin.line; }
+    | Exp DOT ID                    { $$ = make_node(Node::Type::Exp, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
+    | ID                            { $$ = make_node(Node::Type::Exp, $1);
+                                        $$->position.first = @1.begin.line; }
+    | INT                           { $$ = make_node(Node::Type::Exp, $1);
+                                        $$->position.first = @1.begin.line; }
+    | FLOAT                         { $$ = make_node(Node::Type::Exp, $1);
+                                        $$->position.first = @1.begin.line; }
     ;
 
 Args
-    : Exp COMMA Args                { $$ = make_node(Node::Type::Args, $1, $2, $3); }
-    | Exp                           { $$ = make_node(Node::Type::Args, $1); }
+    : Exp COMMA Args                { $$ = make_node(Node::Type::Args, $1, $2, $3);
+                                        $$->position.first = @1.begin.line; }
+    | Exp                           { $$ = make_node(Node::Type::Args, $1);
+                                        $$->position.first = @1.begin.line; }
     ;
 
 %%
@@ -230,8 +286,7 @@ void parse(std::istream &in, std::ostream &out) {
         }
     } catch (yy::parser::syntax_error &e) {
         std::ostringstream msg;
-        msg << e.what() << " at row " << e.location.begin.line << " column "
-            << e.location.begin.column;
+        msg << "Error type B at Line " << e.location.begin.line << ": " << e.what();
         throw yy::parser::syntax_error(e.location, msg.str());
     }
 }
