@@ -18,7 +18,7 @@ run: build
 	for file in $(TESTDIR)/*.c ; do cat $${file} | ./$(OUT) 2>&1 | tee $${file}.output ; done
 
 clean:
-	rm -f *.o *.out *.cxx *.hxx *.cc *.hh *.output $(TESTDIR)/*.output *.dot $(OUT)
+	rm -rf *.o *.out *.cxx *.hxx *.cc *.hh *.output $(TESTDIR)/*.output *.dot *.dSYM $(OUT)
 
 format:
 	fd -a -e c -e h -e cc -e hh -e cpp -e cxx -e hpp -e hxx -x clang-format -style=file -i {}

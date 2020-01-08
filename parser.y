@@ -6,7 +6,7 @@
 %language "c++"
 
 /* require bison version */
-%require  "3.2"
+%require  "3.0"
 
 /* add parser members */
 %parse-param  {yy::scanner& scanner} {std::ostream& out}
