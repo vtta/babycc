@@ -90,6 +90,7 @@ TYPE        "int"|"float"
 .                           {
                                 std::cerr << "Error type A at Line " << yylloc->begin.line 
                                           <<": Mysterious character " << yytext << std::endl;
+                                // std::exit(0);
                             }
 
 %%

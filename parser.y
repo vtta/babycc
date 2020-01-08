@@ -3,6 +3,7 @@
 
 /* C++ parser interface */
 %skeleton "lalr1.cc"
+%language "c++"
 
 /* require bison version */
 %require  "3.2"
@@ -32,7 +33,7 @@
 %type <std::shared_ptr<Node>> Program ExtDefList ExtDef ExtDecList
             Specifier StructSpecifier OptTag Tag VarDec FunDec
             VarList ParamDec CompSt StmtList Stmt DefList Def DecList
-            Dec Exp Args
+            Dec Exp Args 
 
 %right ASSIGN
 %left OR AND RELOP PLUS MINUS STAR DIV LP RP LB RB DOT
@@ -80,8 +81,6 @@
 
 Program
     : ExtDefList                    {
-                                        // std::cerr << yylhs.location.begin.line << std::endl;
-                                        std::cerr << @1.begin.line << std::endl;
                                         $$ = make_node(Node::Type::Program, $1);
                                         $$->position.first = @1.begin.line;
                                         ast_root = $$;
@@ -122,6 +121,7 @@ Specifier
 StructSpecifier
     : STRUCT OptTag LC DefList RC   { $$ = make_node(Node::Type::StructSpecifier, $1, $2, $3, $4, $5);
                                         $$->position.first = @1.begin.line; }
+    | STRUCT OptTag LC error RC     { error(@4, "Valid StructSpecifier expected."); }
     | STRUCT Tag                    { $$ = make_node(Node::Type::StructSpecifier, $1, $2);
                                         $$->position.first = @1.begin.line; }
     ;
@@ -139,12 +139,12 @@ Tag
 
 
 /* Declarators */
-
 VarDec
     : ID                            { $$ = make_node(Node::Type::VarDec, $1);
                                         $$->position.first = @1.begin.line; }
     | VarDec LB INT RB              { $$ = make_node(Node::Type::VarDec, $1, $2, $3, $4);
                                         $$->position.first = @1.begin.line; }
+    | VarDec LB error RB            { error(@3, "Valid VarDec expected."); }
     ;
 
 FunDec 
@@ -152,6 +152,7 @@ FunDec
                                         $$->position.first = @1.begin.line; }
     | ID LP RP                      { $$ = make_node(Node::Type::FunDec, $1, $2, $3);
                                         $$->position.first = @1.begin.line; }
+    | ID LP error RP                { error(@3, "Valid FunDec expected."); }
     ;
 
 VarList
@@ -159,6 +160,7 @@ VarList
                                         $$->position.first = @1.begin.line; }
     | ParamDec                      { $$ = make_node(Node::Type::VarList, $1);
                                         $$->position.first = @1.begin.line; }
+    | ParamDec error                { error(@2, "COMMA expected."); }
     ;
 
 ParamDec
@@ -191,8 +193,13 @@ Stmt
                                         $$->position.first = @1.begin.line; }
     | IF LP Exp RP Stmt ELSE Stmt   { $$ = make_node(Node::Type::Stmt, $1, $2, $3, $4, $5, $6, $7);
                                         $$->position.first = @1.begin.line; }
+    | IF LP error RP                { /* error(@3, "Valid Stmt expected."); */ }
     | WHILE LP Exp RP Stmt          { $$ = make_node(Node::Type::Stmt, $1, $2, $3, $4, $5);
                                         $$->position.first = @1.begin.line; }
+    | Exp error                     { /* error(@2, "Valid Stmt expected."); */ }
+	| IF error                      { /* error(@2, "Valid Stmt expected."); */ }
+	| WHILE error                   { /* error(@2, "Valid Stmt expected."); */ }
+    | WHILE LP error RP             { /* error(@2, "Valid Stmt expected."); */ }
     ;
 
 
@@ -251,10 +258,12 @@ Exp
                                         $$->position.first = @1.begin.line; }
     | ID LP Args RP                 { $$ = make_node(Node::Type::Exp, $1, $2, $3, $4);
                                         $$->position.first = @1.begin.line; }
+    | ID LP error RP                { /* error(@3, "Valid Exp expected."); */ }
     | ID LP RP                      { $$ = make_node(Node::Type::Exp, $1, $2, $3);
                                         $$->position.first = @1.begin.line; }
     | Exp LB Exp RB                 { $$ = make_node(Node::Type::Exp, $1, $2, $3, $4);
                                         $$->position.first = @1.begin.line; }
+    | Exp LB error RB               { /* error(@3, "Valid Exp expected."); */ }
     | Exp DOT ID                    { $$ = make_node(Node::Type::Exp, $1, $2, $3);
                                         $$->position.first = @1.begin.line; }
     | ID                            { $$ = make_node(Node::Type::Exp, $1);
@@ -274,27 +283,21 @@ Args
 
 %%
 void yy::parser::error(const parser::location_type &l, const std::string &m) {
-    throw yy::parser::syntax_error(l, m);
+    std::cerr << "Error type B at Line " << l.begin.line << ": " << m << std::endl;
 }
 
 void parse(std::istream &in, std::ostream &out) {
     yy::scanner scanner(in);
     yy::parser parser(scanner, out);
-    try {
-        if (parser.parse() != 0) {
-            throw std::runtime_error("unknown parsing error");
-        }
-    } catch (yy::parser::syntax_error &e) {
-        std::ostringstream msg;
-        msg << "Error type B at Line " << e.location.begin.line << ": " << e.what();
-        throw yy::parser::syntax_error(e.location, msg.str());
-    }
+    parser.parse();
 }
 
 int main() {
     try {
         parse(std::cin, std::cout);
-        std::cout << ast_root->to_string();
+        if (ast_root) {
+            std::cout << ast_root->to_string();
+        }
     } catch (yy::parser::syntax_error &e) {
         std::cerr << e.what() << std::endl;
     }

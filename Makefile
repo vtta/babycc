@@ -8,7 +8,7 @@ PARSER = parser.y
 
 $(OUT):
 	/usr/local/opt/flex/bin/flex scanner.l
-	/usr/local/opt/bison/bin/bison --graph --report=all parser.y
+	/usr/local/opt/bison/bin/bison --report=state --graph --report=all parser.y
 	$(CXX) $(CXXFLAGS) scanner.cxx parser.cxx -o $(OUT)
 
 build: $(OUT)
