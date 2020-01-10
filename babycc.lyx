@@ -1,0 +1,471 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass ctex-article
+\begin_preamble
+\chead{编译课设-2017302580220-胡俊良}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "Fira Code"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts true
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize a4paper
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\use_minted 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle fancy
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+\begin_inset CommandInset href
+LatexCommand href
+name "babycc"
+target "http://github.com/vtta/babycc"
+literal "false"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Author
+胡俊良 2017302580220
+\end_layout
+
+\begin_layout Section
+环境说明
+\end_layout
+
+\begin_layout Subsection
+工具链
+\end_layout
+
+\begin_layout Itemize
+Flex
+\end_layout
+
+\begin_layout Itemize
+Bison 3.0或更新，必须支持Bison C++ API
+\end_layout
+
+\begin_layout Itemize
+GCC 9/Clang 6或更新，必须支持C++17
+\end_layout
+
+\begin_layout Subsection
+macOS
+\end_layout
+
+\begin_layout Itemize
+使用Homebrew安装最新版工具链
+\end_layout
+
+\begin_layout LyX-Code
+brew install flex bison llvm
+\end_layout
+
+\begin_layout Itemize
+make即可
+\end_layout
+
+\begin_layout LyX-Code
+make clean && make run
+\end_layout
+
+\begin_layout Subsection
+Linux
+\end_layout
+
+\begin_layout Standard
+以下Ubuntu为例
+\end_layout
+
+\begin_layout Itemize
+下载安装最新版LLVM工具链
+\end_layout
+
+\begin_layout LyX-Code
+sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" 
+\end_layout
+
+\begin_layout Itemize
+安装Flex和Bison
+\end_layout
+
+\begin_layout LyX-Code
+sudo apt install -y flex bison
+\end_layout
+
+\begin_layout Itemize
+编译并运行程序
+\end_layout
+
+\begin_layout LyX-Code
+flex scanner.l
+\end_layout
+
+\begin_layout LyX-Code
+bison --report=state --graph --report=all parser.y
+\end_layout
+
+\begin_layout LyX-Code
+clang++ -std=c++17 -g -O0 -fsanitize=address 
+\backslash
+
+\end_layout
+
+\begin_layout LyX-Code
+    scanner.cxx parser.cxx -o babycc
+\end_layout
+
+\begin_layout LyX-Code
+for file in tests/*.c ; do 
+\end_layout
+
+\begin_layout LyX-Code
+    cat ${file} | ./babycc 2>&1 | tee ${file}.output 
+\end_layout
+
+\begin_layout LyX-Code
+done
+\end_layout
+
+\begin_layout Subsection
+测试说明
+\end_layout
+
+\begin_layout Standard
+程序测试样例放在tests文件夹下，测试脚本会读入tests文件夹下每一个C语言源程序送入babycc主程序进行分析。
+\end_layout
+
+\begin_layout Standard
+每个文件的输出结果保存在对应源码同一目录下的.output文件中。
+\end_layout
+
+\begin_layout Section
+功能说明
+\end_layout
+
+\begin_layout Standard
+词法规则中单个字母的定义详见源码。
+\end_layout
+
+\begin_layout Standard
+词法规则只匹配正数，负数被认为是减号后接一个正数。
+\end_layout
+
+\begin_layout Subsection
+非十进制整数
+\end_layout
+
+\begin_layout LyX-Code
+// 十六进制前缀+十六进制数位+可选整型后缀
+\end_layout
+
+\begin_layout LyX-Code
+{HP}{H}+{IS}?
+\end_layout
+
+\begin_layout LyX-Code
+// 0 +八进制数位+可选整型后缀
+\end_layout
+
+\begin_layout LyX-Code
+"0"{O}*{IS}?
+\end_layout
+
+\begin_layout Subsection
+指数形式小数
+\end_layout
+
+\begin_layout LyX-Code
+// 十进制数位+指数+可选后缀
+\end_layout
+
+\begin_layout LyX-Code
+{D}+{E}{FS}?
+\end_layout
+
+\begin_layout LyX-Code
+// 可选整数部分+小数部分+可选指数+可选后缀
+\end_layout
+
+\begin_layout LyX-Code
+{D}*"."{D}+{E}?{FS}?
+\end_layout
+
+\begin_layout LyX-Code
+// 整数部分+可选指数+可选后缀
+\end_layout
+
+\begin_layout LyX-Code
+{D}+"."{E}?{FS}?
+\end_layout
+
+\begin_layout LyX-Code
+// 十六进制前缀+十六进制数位+指数+可选后缀
+\end_layout
+
+\begin_layout LyX-Code
+{HP}{H}+{P}{FS}?
+\end_layout
+
+\begin_layout LyX-Code
+// 十六进制前缀+可选整数部分+小数+指数+可选后缀
+\end_layout
+
+\begin_layout LyX-Code
+{HP}{H}*"."{H}+{P}{FS}? 
+\end_layout
+
+\begin_layout LyX-Code
+// 十六进制前缀+整数部分+指数+可选后缀
+\end_layout
+
+\begin_layout LyX-Code
+{HP}{H}+"."{P}{FS}?
+\end_layout
+
+\begin_layout Subsection
+单多行注释
+\end_layout
+
+\begin_layout Standard
+由于Flex的任意字符通配符不包括换行符，故单行注释可直接用
+\noun on
+//
+\noun default
+开头的任意字符串匹配。
+\end_layout
+
+\begin_layout LyX-Code
+"//".*  { /* consume //-comment */ }
+\end_layout
+
+\begin_layout Standard
+多行注释则先匹配开头的
+\noun on
+/*
+\noun default
+，然后不断吃掉输入字符，直到看到
+\noun on
+*/
+\noun default
+为止。
+\end_layout
+
+\begin_layout LyX-Code
+"/*"    { comment(); }
+\end_layout
+
+\begin_layout Standard
+相应吃注释程序源码：
+\end_layout
+
+\begin_layout LyX-Code
+void comment() {
+\end_layout
+
+\begin_layout LyX-Code
+    for (int c; (c = yyFlexLexer::yyinput()) != 0;)
+\end_layout
+
+\begin_layout LyX-Code
+        if (c == '*') {
+\end_layout
+
+\begin_layout LyX-Code
+            while ((c = yyFlexLexer::yyinput()) == '*');
+\end_layout
+
+\begin_layout LyX-Code
+            if (c == '/') return;
+\end_layout
+
+\begin_layout LyX-Code
+            if (c == 0) break;
+\end_layout
+
+\begin_layout LyX-Code
+        }
+\end_layout
+
+\begin_layout LyX-Code
+    yyFlexLexer::LexerError("unterminated comment");
+\end_layout
+
+\begin_layout LyX-Code
+}
+\end_layout
+
+\begin_layout Section
+程序特点
+\end_layout
+
+\begin_layout Subsection
+智能内存管理
+\end_layout
+
+\begin_layout Standard
+所有的终结符、非终结符均用一个Node对象表示，其实是variant的naïve实现。
+\end_layout
+
+\begin_layout Standard
+节点内用：
+\end_layout
+
+\begin_layout Itemize
+一个enum class表示终结符或非终结符的类型
+\end_layout
+
+\begin_layout Itemize
+一个向量表示该节点在语法树中的孩子们
+\end_layout
+
+\begin_layout Itemize
+一个用于标记当前节点在输入流中起始位置的成员
+\end_layout
+
+\begin_layout LyX-Code
+class Node {
+\end_layout
+
+\begin_layout LyX-Code
+public:
+\end_layout
+
+\begin_layout LyX-Code
+    std::string label;
+\end_layout
+
+\begin_layout LyX-Code
+    SymbolType type;
+\end_layout
+
+\begin_layout LyX-Code
+    std::pair<int, int> position;
+\end_layout
+
+\begin_layout LyX-Code
+    std::vector<std::shared_ptr<Node>> children;
+\end_layout
+
+\begin_layout LyX-Code
+    std::string to_string();
+\end_layout
+
+\begin_layout LyX-Code
+}; 
+\end_layout
+
+\begin_layout Standard
+Bison里分析栈中的节点全部被包装在一个智能指针std::shared_ptr<Node>中，故当节点被弹出或分析过程非正常推出时，所有节点消耗的内存能被自动
+释放。
+\end_layout
+
+\begin_layout Subsection
+Pretty Printing
+\end_layout
+
+\begin_layout Standard
+语法树会以类似命令行工具tree输出格式的形式输出，方便检查从属关系，如下：
+\end_layout
+
+\begin_layout LyX-Code
+└──Def (2)
+\end_layout
+
+\begin_layout LyX-Code
+    ├──Specifier (2)
+\end_layout
+
+\begin_layout LyX-Code
+    │   └──TYPE (2) int
+\end_layout
+
+\begin_layout LyX-Code
+    ├──DecList (3)
+\end_layout
+
+\begin_layout LyX-Code
+    │   └──Dec (3)
+\end_layout
+
+\begin_layout LyX-Code
+    │       └──VarDec (3)
+\end_layout
+
+\begin_layout LyX-Code
+    │           └──ID (3) i
+\end_layout
+
+\begin_layout LyX-Code
+    └──SEMI (3) ;
+\end_layout
+
+\end_body
+\end_document
